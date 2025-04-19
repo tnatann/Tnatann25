@@ -4,15 +4,14 @@ import { Eye, EyeOff, Lock, Loader2, User2, Mail, MapPin } from "lucide-react";
 import toast from "react-hot-toast";
 import AuthImagePattern from "../components/skeletons/AuthImagePattern.jsx";
 import { useEffect, useState } from "react";
-import { Country, State, City } from "country-state-city";
 
 export const Register = () => {
   const navigate = useNavigate();
   const { register, isRegistering, authUser } = useAuthStore();
 
-  const [countries] = useState(Country.getAllCountries());
-  const [states, setStates] = useState(null);
-  const [cities, setCities] = useState(null);
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
 
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [selectedState, setSelectedState] = useState(null);
@@ -22,6 +21,14 @@ export const Register = () => {
       navigate("/");
     }
   }, [authUser, navigate]);
+
+  useEffect(() => {
+    const loadCountries = async () => {
+      const { Country } = await import("country-state-city");
+      setCountries(Country.getAllCountries());
+    };
+    loadCountries();
+  }, []);
 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -45,11 +52,13 @@ export const Register = () => {
     if (!formData.country || !formData.state || !formData.city) {
       return toast.error("Fill your complete location");
     }
-    if (!/\S+@\S+\.\S+/.test(formData.email))
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
       return toast.error("Invalid email format");
+    }
 
     return true;
   };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm() === true) {
@@ -57,23 +66,28 @@ export const Register = () => {
     }
   };
 
-  const handleCountryChange = (country) => {
+  const handleCountryChange = async (country) => {
     setSelectedCountry(country);
-    setStates(State.getStatesOfCountry(country.isoCode));
     setFormData({ ...formData, country: country.name });
     setCities([]);
+    setStates([]);
+
+    const { State } = await import("country-state-city");
+    const statesOfCountry = State.getStatesOfCountry(country.isoCode);
+    setStates(statesOfCountry);
   };
 
-  const handleStateChange = (state) => {
+  const handleStateChange = async (state) => {
     setFormData({ ...formData, state: state.name });
-    setSelectedState(state); // async
+    setSelectedState(state);
+
     if (state && selectedCountry) {
-      const cities = City.getCitiesOfState(
+      const { City } = await import("country-state-city");
+      const citiesOfState = City.getCitiesOfState(
         selectedCountry.isoCode,
         state.isoCode
       );
-      setCities(cities);
-      console.log(selectedCountry, state);
+      setCities(citiesOfState);
     } else {
       setCities([]);
     }
@@ -169,8 +183,8 @@ export const Register = () => {
                 </button>
               </div>
             </div>
-            {/* select options */}
 
+            {/* Country / State / City */}
             <div className="grid grid-cols-3 sm:grid-cols-3 gap-4">
               <select
                 className="select select-bordered"
@@ -197,8 +211,8 @@ export const Register = () => {
                   )
                 }
               >
-                <option>State</option>
-                {states?.map((state) => (
+                <option value="">State</option>
+                {states.map((state) => (
                   <option key={state.isoCode} value={state.isoCode}>
                     {state.name}
                   </option>
@@ -212,8 +226,8 @@ export const Register = () => {
                   setFormData({ ...formData, city: e.target.value })
                 }
               >
-                <option>City</option>
-                {cities?.map((city) => (
+                <option value="">City</option>
+                {cities.map((city) => (
                   <option key={city.name} value={city.name}>
                     {city.name}
                   </option>
@@ -221,8 +235,7 @@ export const Register = () => {
               </select>
             </div>
 
-            {/* location */}
-
+            {/* tehsil */}
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-medium">Tehsil</span>
@@ -250,18 +263,17 @@ export const Register = () => {
               disabled={isRegistering}
             >
               {isRegistering ? (
-                <>
-                  <Loader2 className="size-5 animate-spin" />
-                </>
+                <Loader2 className="size-5 animate-spin" />
               ) : (
                 "Create Account"
               )}
             </button>
           </form>
+
           <div className="text-center">
             <p className="text-base-content/60">
               Already have an account?{" "}
-              <Link to={"/login"} className="link link-primary">
+              <Link to="/login" className="link link-primary">
                 Sign in
               </Link>
             </p>
