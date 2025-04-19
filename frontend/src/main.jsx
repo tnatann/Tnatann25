@@ -26,7 +26,11 @@ const ManageSellers = lazy(() => import("./pages/admin/ManageSellers.jsx"));
 
 // Wrap all routes in Suspense
 const withSuspense = (element) => (
-  <Suspense fallback={<div>Loading...</div>}>{element}</Suspense>
+  <Suspense
+    fallback={<div className="min-h-screen p-10 text-center">Loading...</div>}
+  >
+    {element}
+  </Suspense>
 );
 
 const appRouter = createBrowserRouter([
