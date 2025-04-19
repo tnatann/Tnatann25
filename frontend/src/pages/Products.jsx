@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore.js";
 import { useAdminStore } from "../store/useAdminStore.js";
-import { Country, State, City } from "country-state-city";
 import { Search } from "lucide-react";
 
 import Skeleton from "../components/skeletons/Skeleton";
@@ -18,13 +17,24 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Location dropdowns
-  const [countries] = useState(Country.getAllCountries());
+  const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
 
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
+
+  // Load countries on first render
+  useEffect(() => {
+    const loadCountries = async () => {
+      const { Country } = await import("country-state-city");
+      const countryData = Country.getAllCountries();
+      setCountries(countryData);
+    };
+
+    loadCountries();
+  }, []);
 
   useEffect(() => {
     if (!authUser) {
@@ -38,7 +48,7 @@ const Products = () => {
     }
   }, [allProducts, fetchProducts]);
 
-  const handleCountryChange = (isoCode) => {
+  const handleCountryChange = async (isoCode) => {
     if (!isoCode) {
       setSelectedCountry("");
       setSelectedState("");
@@ -48,9 +58,10 @@ const Products = () => {
       return;
     }
 
-    const country = countries.find((c) => c.isoCode === isoCode);
-    if (country) {
-      setSelectedCountry(country.name);
+    const { State } = await import("country-state-city");
+    const selected = countries.find((c) => c.isoCode === isoCode);
+    if (selected) {
+      setSelectedCountry(selected.name);
       const fetchedStates = State.getStatesOfCountry(isoCode);
       setStates(fetchedStates);
       setSelectedState("");
@@ -59,7 +70,7 @@ const Products = () => {
     }
   };
 
-  const handleStateChange = (isoCode) => {
+  const handleStateChange = async (isoCode) => {
     if (!isoCode) {
       setSelectedState("");
       setSelectedCity("");
@@ -67,6 +78,7 @@ const Products = () => {
       return;
     }
 
+    const { City } = await import("country-state-city");
     const state = states.find((s) => s.isoCode === isoCode);
     if (state) {
       setSelectedState(state.name);
