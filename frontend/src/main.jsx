@@ -1,94 +1,65 @@
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import "./index.css";
+import { lazy, Suspense } from "react";
 import App from "./App.jsx";
-import Home from "./pages/Home.jsx";
-import Login from "./pages/Login.jsx";
-import Register from "./pages/Register.jsx";
-import Products from "./pages/Products.jsx";
-import PostAd from "./pages/PostAd.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute";
-import ProductDetails from "./pages/ProductDetails.jsx";
-import SellerDashboard from "./pages/SellerDashboard.jsx";
-import About from "./pages/About.jsx";
-import ContactUs from "./pages/ContactUs.jsx";
-import EditAd from "./pages/EditAd.jsx";
-import AdminLayout from "./pages/admin/AdminLayout.jsx";
-import ManageUsers from "./pages/admin/ManageUsers.jsx";
-import ManageProducts from "./pages/admin/ManageProducts.jsx";
-import ManageSellers from "./pages/admin/ManageSellers.jsx";
-import AdminHome from "./pages/admin/AdminHome.jsx";
+import "./index.css";
+
+// Lazy imports for route-level components
+const Home = lazy(() => import("./pages/Home.jsx"));
+const Login = lazy(() => import("./pages/Login.jsx"));
+const Register = lazy(() => import("./pages/Register.jsx"));
+const Products = lazy(() => import("./pages/Products.jsx"));
+const PostAd = lazy(() => import("./pages/PostAd.jsx"));
+const ProductDetails = lazy(() => import("./pages/ProductDetails.jsx"));
+const SellerDashboard = lazy(() => import("./pages/SellerDashboard.jsx"));
+const About = lazy(() => import("./pages/About.jsx"));
+const ContactUs = lazy(() => import("./pages/ContactUs.jsx"));
+const EditAd = lazy(() => import("./pages/EditAd.jsx"));
+
+// Admin Pages (lazy)
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout.jsx"));
+const AdminHome = lazy(() => import("./pages/admin/AdminHome.jsx"));
+const ManageUsers = lazy(() => import("./pages/admin/ManageUsers.jsx"));
+const ManageProducts = lazy(() => import("./pages/admin/ManageProducts.jsx"));
+const ManageSellers = lazy(() => import("./pages/admin/ManageSellers.jsx"));
+
+// Wrap all routes in Suspense
+const withSuspense = (element) => (
+  <Suspense fallback={<div>Loading...</div>}>{element}</Suspense>
+);
 
 const appRouter = createBrowserRouter([
   {
     path: "/",
     element: <App />,
     children: [
-      {
-        path: "/",
-        element: <Home />,
-      },
-      {
-        path: "/login",
-        element: <Login />,
-      },
-      {
-        path: "/register",
-        element: <Register />,
-      },
-      {
-        path: "/about",
-        element: <About />,
-      },
-      {
-        path: "/contact",
-        element: <ContactUs />,
-      },
-      {
-        path: "/products",
-        element: <Products />,
-      },
+      { path: "/", element: withSuspense(<Home />) },
+      { path: "/login", element: withSuspense(<Login />) },
+      { path: "/register", element: withSuspense(<Register />) },
+      { path: "/about", element: withSuspense(<About />) },
+      { path: "/contact", element: withSuspense(<ContactUs />) },
+      { path: "/products", element: withSuspense(<Products />) },
       {
         path: "/post-ad",
         element: <ProtectedRoute role="seller" />,
-        children: [{ path: "", element: <PostAd /> }],
+        children: [{ path: "", element: withSuspense(<PostAd />) }],
       },
-      {
-        path: "/products/:id",
-        element: <ProductDetails />,
-      },
-      {
-        path: "/seller-dashboard",
-        element: <SellerDashboard />,
-      },
-      {
-        path: "editAd",
-        element: <EditAd />,
-      },
+      { path: "/products/:id", element: withSuspense(<ProductDetails />) },
+      { path: "/seller-dashboard", element: withSuspense(<SellerDashboard />) },
+      { path: "/editAd", element: withSuspense(<EditAd />) },
       {
         path: "admin",
         element: <ProtectedRoute role="admin" />,
         children: [
           {
             path: "",
-            element: <AdminLayout />,
+            element: withSuspense(<AdminLayout />),
             children: [
-              {
-                path: "",
-                element: <AdminHome />,
-              },
-              {
-                path: "users",
-                element: <ManageUsers />,
-              },
-              {
-                path: "products",
-                element: <ManageProducts />,
-              },
-              {
-                path: "sellers",
-                element: <ManageSellers />,
-              },
+              { path: "", element: withSuspense(<AdminHome />) },
+              { path: "users", element: withSuspense(<ManageUsers />) },
+              { path: "products", element: withSuspense(<ManageProducts />) },
+              { path: "sellers", element: withSuspense(<ManageSellers />) },
             ],
           },
         ],
