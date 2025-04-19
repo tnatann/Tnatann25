@@ -64,17 +64,19 @@ const Home = () => {
 
       {/* 🛒 Categories */}
       <section className="text-center py-12 px-4">
-        <h2 className="text-2xl md:text-3xl font-semibold mb-6">
+        <h2 className="text-2xl md:text-3xl font-semibold mb-8">
           Explore Categories
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6">
           {categories.map((cat, index) => (
             <div
               key={index}
-              className="bg-base-200 p-4 rounded-lg shadow hover:scale-105 transition"
+              className="bg-base-200 p-6 rounded-xl shadow hover:scale-105 transition-transform duration-300 flex flex-col items-center justify-center"
             >
-              <div className="text-4xl">{cat.icon}</div>
-              <p className="mt-2 font-medium">{cat.name}</p>
+              <div className="text-5xl sm:text-6xl">{cat.icon}</div>
+              <p className="mt-3 text-base font-semibold sm:text-lg">
+                {cat.name}
+              </p>
             </div>
           ))}
         </div>
