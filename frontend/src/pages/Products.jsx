@@ -60,7 +60,7 @@ const Products = () => {
     }
 
     try {
-      const { data } = await fetch(`/location/states/${isoCode}`);
+      const { data } = await axiosInstance.get(`/location/states/${isoCode}`);
       setStates(data);
       setSelectedCountry(isoCode);
       setSelectedState("");
@@ -80,7 +80,7 @@ const Products = () => {
     }
 
     try {
-      const { data } = await fetch(
+      const { data } = await axiosInstance.get(
         `/location/cities/${selectedCountry}/${isoCode}`
       );
       setCities(data);
