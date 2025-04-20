@@ -14,19 +14,4 @@ export default defineConfig({
       brotliSize: true,
     }),
   ],
-  optimizeDeps: {
-    exclude: ["country-state-city"],
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          // If the module is `country-state-city`, create a separate chunk
-          if (id.includes("country-state-city")) {
-            return "country-state-city"; // This will create a separate chunk for this library
-          }
-        },
-      },
-    },
-  },
 });

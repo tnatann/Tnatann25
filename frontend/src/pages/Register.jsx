@@ -4,6 +4,7 @@ import { useAuthStore } from "../store/useAuthStore.js";
 import { Eye, EyeOff, Lock, Loader2, User2, Mail, MapPin } from "lucide-react";
 import toast from "react-hot-toast";
 import AuthImagePattern from "../components/skeletons/AuthImagePattern.jsx";
+import { axiosInstance } from "../lib/axios.js";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -28,79 +29,82 @@ const Register = () => {
 
   const [showPassword, setShowPassword] = useState(false);
 
-  // 🔐 Redirect if logged in
+  // 🔐 Redirect if already logged in
   useEffect(() => {
     if (authUser) navigate("/");
   }, [authUser, navigate]);
 
-  // 🌐 Load countries on mount
+  // 🌐 Fetch countries on mount
   useEffect(() => {
-    const loadCountries = async () => {
-      const { Country } = await import("country-state-city");
-      const countryList = Country.getAllCountries();
-      setCountries(countryList);
+    const fetchCountries = async () => {
+      try {
+        const { data } = await axiosInstance.get("/location/countries");
+        setCountries(data);
+      } catch {
+        toast.error("Failed to load countries");
+      }
     };
 
-    loadCountries();
+    fetchCountries();
   }, []);
 
-  // ✅ Validate form
+  // 🌍 Handle country selection
+  const handleCountryChange = async (isoCode) => {
+    setSelectedCountry(isoCode);
+    console.log(isoCode);
+
+    setFormData({ ...formData, country: isoCode, state: "", city: "" });
+    setStates([]);
+    setCities([]);
+    setSelectedState(null);
+
+    try {
+      const { data } = await axiosInstance.get(`/location/states/${isoCode}`);
+      setStates(data);
+    } catch {
+      toast.error("Failed to load states");
+    }
+  };
+
+  // 🏙 Handle state selection
+  const handleStateChange = async (isoCode) => {
+    setSelectedState(isoCode);
+    setFormData({ ...formData, state: isoCode, city: "" });
+    setCities([]);
+
+    try {
+      const { data } = await axiosInstance.get(
+        `/location/cities/${selectedCountry}/${isoCode}`
+      );
+      setCities(data);
+    } catch {
+      toast.error("Failed to load cities");
+    }
+  };
+
+  // ✅ Form validation
   const validateForm = () => {
     const { name, email, password, country, state, city } = formData;
 
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      return toast.error("All fields are required!");
+    if (!name || !email || !password || !country || !state || !city) {
+      toast.error("All fields are required");
+      return false;
     }
-    if (!country || !state || !city) {
-      return toast.error("Fill your complete location");
-    }
+
     if (!/\S+@\S+\.\S+/.test(email)) {
-      return toast.error("Invalid email format");
+      toast.error("Invalid email format");
+      return false;
     }
 
     return true;
   };
 
-  // 🔘 Form submit
+  // 📩 Form submit handler
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
       register(formData);
     }
-  };
-
-  // 🌍 Handle country selection
-  const handleCountryChange = async (isoCode) => {
-    if (!isoCode) return;
-
-    const selected = countries.find((c) => c.isoCode === isoCode);
-    if (!selected) return;
-
-    setSelectedCountry(selected);
-    setFormData({ ...formData, country: selected.name });
-    setStates([]);
-    setCities([]);
-    setSelectedState(null);
-
-    const { State } = await import("country-state-city");
-    const stateList = State.getStatesOfCountry(isoCode);
-    setStates(stateList);
-  };
-
-  // 🏙 Handle state selection
-  const handleStateChange = async (isoCode) => {
-    if (!isoCode || !selectedCountry) return;
-
-    const selected = states.find((s) => s.isoCode === isoCode);
-    if (!selected) return;
-
-    setSelectedState(selected);
-    setFormData({ ...formData, state: selected.name });
-    setCities([]);
-
-    const { City } = await import("country-state-city");
-    const cityList = City.getCitiesOfState(selectedCountry.isoCode, isoCode);
-    setCities(cityList);
   };
 
   return (
@@ -119,7 +123,6 @@ const Register = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name */}
             <InputField
               label="Name"
               icon={<User2 className="size-5" />}
@@ -130,7 +133,6 @@ const Register = () => {
               placeholder="Enter your name"
             />
 
-            {/* Email */}
             <InputField
               label="Email"
               icon={<Mail className="size-5" />}
@@ -153,7 +155,7 @@ const Register = () => {
                 <input
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
-                  className="input input-bordered w-full relative pl-10"
+                  className="input input-bordered w-full pl-10"
                   placeholder="Enter your password"
                   value={formData.password}
                   onChange={(e) =>
@@ -163,7 +165,7 @@ const Register = () => {
                 <button
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowPassword((prev) => !prev)}
                 >
                   {showPassword ? (
                     <Eye className="size-5 text-base-content/40" />
@@ -174,12 +176,12 @@ const Register = () => {
               </div>
             </div>
 
-            {/* Country / State / City */}
+            {/* Location Dropdowns */}
             <div className="grid grid-cols-3 gap-4">
-              {/* Country */}
               <select
                 className="select select-bordered"
                 onChange={(e) => handleCountryChange(e.target.value)}
+                value={formData.country}
               >
                 <option value="">Country</option>
                 {countries.map((c) => (
@@ -189,10 +191,10 @@ const Register = () => {
                 ))}
               </select>
 
-              {/* State */}
               <select
                 className="select select-bordered"
                 onChange={(e) => handleStateChange(e.target.value)}
+                value={formData.state}
                 disabled={!selectedCountry}
               >
                 <option value="">State</option>
@@ -203,12 +205,12 @@ const Register = () => {
                 ))}
               </select>
 
-              {/* City */}
               <select
                 className="select select-bordered"
                 onChange={(e) =>
                   setFormData({ ...formData, city: e.target.value })
                 }
+                value={formData.city}
                 disabled={!selectedState}
               >
                 <option value="">City</option>
@@ -231,7 +233,7 @@ const Register = () => {
               placeholder="Tehsil"
             />
 
-            {/* Submit */}
+            {/* Submit Button */}
             <button
               type="submit"
               className="btn btn-primary w-full"
@@ -256,7 +258,7 @@ const Register = () => {
         </div>
       </div>
 
-      {/* Right Image Panel */}
+      {/* Right Panel */}
       <AuthImagePattern
         title={"Buy. Sell. Connect"}
         subtitle={"Buy. Sell. Connect. – Your Marketplace, Your Deals!"}
@@ -265,7 +267,7 @@ const Register = () => {
   );
 };
 
-// 🔧 Reusable InputField Component
+// 🔧 InputField Component
 const InputField = ({ label, icon, value, onChange, placeholder }) => (
   <div className="form-control">
     <label className="label">

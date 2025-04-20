@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import authRoutes from "./routes/authRoute.js";
 import productRoutes from "./routes/productRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import locationRoutes from "./routes/locationRoutes.js";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -35,6 +36,7 @@ app.get("/", (req, res) => res.send("API running"));
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/location", locationRoutes);
 
 const PORT = process.env.PORT || 5002;
 app.listen(PORT, () => console.log(`Server running on Port ${PORT}`));

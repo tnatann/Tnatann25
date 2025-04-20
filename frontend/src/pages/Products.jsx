@@ -7,6 +7,7 @@ import { Search } from "lucide-react";
 import Skeleton from "../components/skeletons/Skeleton";
 import ProductCard from "../components/ProductCard";
 import CategoryBar from "../components/CategoryBar.jsx";
+import { axiosInstance } from "../lib/axios.js";
 
 const Products = () => {
   const navigate = useNavigate();
@@ -24,12 +25,15 @@ const Products = () => {
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
 
-  // Load countries on mount
+  // Load countries from backend on mount
   useEffect(() => {
     const loadCountries = async () => {
-      const { Country } = await import("country-state-city");
-      const countryData = Country.getAllCountries();
-      setCountries(countryData);
+      try {
+        const { data } = await axiosInstance.get("/location/countries");
+        setCountries(data);
+      } catch (error) {
+        console.error("Error fetching countries:", error);
+      }
     };
 
     loadCountries();
@@ -55,15 +59,15 @@ const Products = () => {
       return;
     }
 
-    const { State } = await import("country-state-city");
-    const country = countries.find((c) => c.isoCode === isoCode);
-    if (country) {
-      setSelectedCountry(country.name);
-      const fetchedStates = State.getStatesOfCountry(isoCode);
-      setStates(fetchedStates);
+    try {
+      const { data } = await fetch(`/location/states/${isoCode}`);
+      setStates(data);
+      setSelectedCountry(isoCode);
       setSelectedState("");
-      setCities([]);
       setSelectedCity("");
+      setCities([]);
+    } catch (error) {
+      console.error("Error fetching states:", error);
     }
   };
 
@@ -75,13 +79,15 @@ const Products = () => {
       return;
     }
 
-    const { City } = await import("country-state-city");
-    const state = states.find((s) => s.isoCode === isoCode);
-    if (state) {
-      setSelectedState(state.name);
-      const fetchedCities = City.getCitiesOfState(state.countryCode, isoCode);
-      setCities(fetchedCities);
+    try {
+      const { data } = await fetch(
+        `/location/cities/${selectedCountry}/${isoCode}`
+      );
+      setCities(data);
+      setSelectedState(isoCode);
       setSelectedCity("");
+    } catch (error) {
+      console.error("Error fetching cities:", error);
     }
   };
 
@@ -145,9 +151,7 @@ const Products = () => {
           {/* Country */}
           <select
             className="select select-bordered"
-            value={
-              countries.find((c) => c.name === selectedCountry)?.isoCode || ""
-            }
+            value={selectedCountry}
             onChange={(e) => handleCountryChange(e.target.value)}
           >
             <option value="">Country</option>
@@ -161,12 +165,12 @@ const Products = () => {
           {/* State */}
           <select
             className="select select-bordered"
-            value={states.find((s) => s.name === selectedState)?.isoCode || ""}
+            value={selectedState}
             onChange={(e) => handleStateChange(e.target.value)}
             disabled={!selectedCountry}
           >
             <option value="">State</option>
-            {states.map((s) => (
+            {states?.map((s) => (
               <option key={s.isoCode} value={s.isoCode}>
                 {s.name}
               </option>
@@ -181,7 +185,7 @@ const Products = () => {
             disabled={!selectedState}
           >
             <option value="">City</option>
-            {cities.map((city) => (
+            {cities?.map((city) => (
               <option key={city.name} value={city.name}>
                 {city.name}
               </option>

@@ -13,7 +13,9 @@ const About = () => {
         </p>
 
         <section className="mb-16">
-          <h2 className="text-2xl font-semibold mb-4">Who We Are</h2>
+          <h2 className="text-2xl font-semibold mb-4 text-center">
+            Who We Are
+          </h2>
           <p className="text-base-content leading-relaxed">
             At Tnatann, we're on a mission to simplify online commerce. Whether
             you're looking to sell your used items, discover local deals, or
