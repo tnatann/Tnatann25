@@ -13,10 +13,9 @@ const Products = () => {
   const { authUser } = useAuthStore();
   const { allProducts, isLoading, fetchProducts } = useAdminStore();
 
-  const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
 
-  // Location dropdowns
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
@@ -25,7 +24,7 @@ const Products = () => {
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
 
-  // Load countries on first render
+  // Load countries on mount
   useEffect(() => {
     const loadCountries = async () => {
       const { Country } = await import("country-state-city");
@@ -36,16 +35,14 @@ const Products = () => {
     loadCountries();
   }, []);
 
+  // Redirect if not logged in
   useEffect(() => {
-    if (!authUser) {
-      navigate("/login");
-    }
+    if (!authUser) navigate("/login");
   }, [authUser, navigate]);
 
+  // Fetch products if not already present
   useEffect(() => {
-    if (!allProducts) {
-      fetchProducts();
-    }
+    if (!allProducts) fetchProducts();
   }, [allProducts, fetchProducts]);
 
   const handleCountryChange = async (isoCode) => {
@@ -59,9 +56,9 @@ const Products = () => {
     }
 
     const { State } = await import("country-state-city");
-    const selected = countries.find((c) => c.isoCode === isoCode);
-    if (selected) {
-      setSelectedCountry(selected.name);
+    const country = countries.find((c) => c.isoCode === isoCode);
+    if (country) {
+      setSelectedCountry(country.name);
       const fetchedStates = State.getStatesOfCountry(isoCode);
       setStates(fetchedStates);
       setSelectedState("");
@@ -92,49 +89,46 @@ const Products = () => {
     setSelectedCity(cityName || "");
   };
 
+  // Filtering logic
   let filteredProducts = allProducts || [];
 
   if (activeCategory !== "All") {
     filteredProducts = filteredProducts.filter(
-      (product) =>
-        product.category?.toLowerCase() === activeCategory.toLowerCase()
+      (p) => p.category?.toLowerCase() === activeCategory.toLowerCase()
     );
   }
 
   if (selectedCountry) {
     filteredProducts = filteredProducts.filter(
-      (product) =>
-        product.seller?.country?.toLowerCase() === selectedCountry.toLowerCase()
+      (p) => p.seller?.country?.toLowerCase() === selectedCountry.toLowerCase()
     );
   }
 
   if (selectedState) {
     filteredProducts = filteredProducts.filter(
-      (product) =>
-        product.seller?.state?.toLowerCase() === selectedState.toLowerCase()
+      (p) => p.seller?.state?.toLowerCase() === selectedState.toLowerCase()
     );
   }
 
   if (selectedCity) {
     filteredProducts = filteredProducts.filter(
-      (product) =>
-        product.seller?.city?.toLowerCase() === selectedCity.toLowerCase()
+      (p) => p.seller?.city?.toLowerCase() === selectedCity.toLowerCase()
     );
   }
 
-  if (searchQuery.trim() !== "") {
-    filteredProducts = filteredProducts.filter((product) =>
-      product.title.toLowerCase().includes(searchQuery.toLowerCase())
+  if (searchQuery.trim()) {
+    filteredProducts = filteredProducts.filter((p) =>
+      p.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }
 
   return (
-    <div className="container min-h-screen mx-auto p-4">
-      {/* Search & Location Filters */}
+    <div className="container mx-auto p-4 min-h-screen">
+      {/* Search & Filters */}
       <div className="sm:grid grid-cols-2 items-center gap-4 space-y-4 sm:space-y-0">
-        {/* Search Bar */}
+        {/* Search Input */}
         <div className="relative">
-          <div className="absolute z-10 flex items-center left-3 inset-y-0">
+          <div className="absolute inset-y-0 left-3 flex items-center">
             <Search className="size-5" />
           </div>
           <input
@@ -146,7 +140,7 @@ const Products = () => {
           />
         </div>
 
-        {/* Location Selects */}
+        {/* Location Filters */}
         <div className="grid grid-cols-3 gap-4">
           {/* Country */}
           <select
@@ -157,9 +151,9 @@ const Products = () => {
             onChange={(e) => handleCountryChange(e.target.value)}
           >
             <option value="">Country</option>
-            {countries.map((country) => (
-              <option key={country.isoCode} value={country.isoCode}>
-                {country.name}
+            {countries.map((c) => (
+              <option key={c.isoCode} value={c.isoCode}>
+                {c.name}
               </option>
             ))}
           </select>
@@ -172,9 +166,9 @@ const Products = () => {
             disabled={!selectedCountry}
           >
             <option value="">State</option>
-            {states.map((state) => (
-              <option key={state.isoCode} value={state.isoCode}>
-                {state.name}
+            {states.map((s) => (
+              <option key={s.isoCode} value={s.isoCode}>
+                {s.name}
               </option>
             ))}
           </select>
@@ -182,7 +176,7 @@ const Products = () => {
           {/* City */}
           <select
             className="select select-bordered"
-            value={selectedCity || ""}
+            value={selectedCity}
             onChange={(e) => handleCityChange(e.target.value)}
             disabled={!selectedState}
           >
@@ -202,14 +196,14 @@ const Products = () => {
         setActiveCategory={setActiveCategory}
       />
 
-      {/* Product List */}
+      {/* Product Listing */}
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-4">
           {[...Array(6)].map((_, i) => (
             <Skeleton key={i} classname="w-full h-64 rounded-lg bg-base-200" />
           ))}
         </div>
-      ) : filteredProducts?.length === 0 ? (
+      ) : filteredProducts.length === 0 ? (
         <div className="mt-10 text-center">
           <h1 className="text-xl font-semibold">No Ads/Products found</h1>
         </div>
